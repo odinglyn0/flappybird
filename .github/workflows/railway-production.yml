@@ -21,8 +21,7 @@ jobs:
 
       - name: Install Railway CLI
         run: |
-          curl -fsSL https://railway.com/install.sh | bash
-          echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+          npm install -g @railway/cli
 
       - name: Deploy to production
         env:
