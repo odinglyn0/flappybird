@@ -71,10 +71,11 @@ describe('flappy game physics', () => {
     expect(stepGame(state, false).dead).toBe(false);
   });
 
-  it('detects upward gaze deltas as flaps only past threshold', () => {
-    expect(shouldFlap(0.5, 0.47)).toBe(true);
-    expect(shouldFlap(0.5, 0.49)).toBe(false);
-    expect(shouldFlap(0.4, 0.5)).toBe(false);
+  it('detects new blink edges as flaps', () => {
+    expect(shouldFlap(false, true)).toBe(true);
+    expect(shouldFlap(true, true)).toBe(false);
+    expect(shouldFlap(false, false)).toBe(false);
+    expect(shouldFlap(true, false)).toBe(false);
   });
 
   it('keeps generated pipe gaps inside playfield constraints', () => {

@@ -8,7 +8,7 @@ import './index.css';
 
 function useEyeController(active: boolean) {
   const [ready, setReady] = useState('Idle');
-  const [eyeY, setEyeY] = useState(0.5);
+  const [blink, setBlink] = useState(false);
 
   useEffect(() => {
     if (!active) {
@@ -73,11 +73,11 @@ function useEyeController(active: boolean) {
       socket.addEventListener('message', (event: MessageEvent<string>) => {
         const message = JSON.parse(event.data) as {
           type: string;
-          eyeY?: number;
+          blink?: boolean;
           nextFrameMs?: number;
         };
-        if (message.type === 'gaze' && typeof message.eyeY === 'number') {
-          setEyeY(message.eyeY);
+        if (message.type === 'gaze' && typeof message.blink === 'boolean') {
+          setBlink(message.blink);
           schedule(message.nextFrameMs ?? 90);
         }
       });
@@ -95,7 +95,7 @@ function useEyeController(active: boolean) {
     };
   }, [active]);
 
-  return { ready, eyeY };
+  return { ready, blink };
 }
 
 function draw(ctx: CanvasRenderingContext2D, state: GameState) {
@@ -130,16 +130,16 @@ function draw(ctx: CanvasRenderingContext2D, state: GameState) {
     ctx.fillRect(0, 0, GAME.width, GAME.height);
     ctx.fillStyle = 'white';
     ctx.font = '800 34px system-ui';
-    ctx.fillText('Look up to flap. Reset to retry.', 115, GAME.height / 2);
+    ctx.fillText('Blink to flap. Reset to retry.', 135, GAME.height / 2);
   }
 }
 
-export function Game({ gaze }: { gaze: number }) {
+export function Game({ blink }: { blink: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const gazeRef = useRef(gaze);
+  const blinkRef = useRef(blink);
   const [run, setRun] = useState(0);
 
-  gazeRef.current = gaze;
+  blinkRef.current = blink;
 
   const reset = useCallback(() => setRun((value) => value + 1), []);
 
@@ -150,13 +150,13 @@ export function Game({ gaze }: { gaze: number }) {
     }
 
     let state = createGameState();
-    let lastGaze = gazeRef.current;
+    let lastBlink = blinkRef.current;
     let raf = 0;
 
     const loop = () => {
-      const currentGaze = gazeRef.current;
-      state = stepGame(state, shouldFlap(lastGaze, currentGaze));
-      lastGaze = currentGaze;
+      const currentBlink = blinkRef.current;
+      state = stepGame(state, shouldFlap(lastBlink, currentBlink));
+      lastBlink = currentBlink;
       draw(ctx, state);
       if (!state.dead) {
         raf = requestAnimationFrame(loop);
@@ -186,28 +186,53 @@ export function Game({ gaze }: { gaze: number }) {
 
 export function App() {
   const [active, setActive] = useState(false);
-  const { ready, eyeY } = useEyeController(active);
+  const [boot, setBoot] = useState<BootstrapResult>({
+    ok: false,
+    status: 'Checking public safetensors…',
+  });
+  const { ready, blink } = useEyeController(active);
+
+  useEffect(() => {
+    bootstrapSafeTensors()
+      .then(setBoot)
+      .catch((error: Error) =>
+        setBoot({
+          ok: false,
+          status: `Safe model bootstrap unavailable: ${error.message}. Backend blink detection still starts from camera input.`,
+        }),
+      );
+  }, []);
 
   return (
     <main className="app">
       <section>
         <p className="eyebrow">React 19 + Vite + shadcn-style UI + Magic UI glow</p>
-        <h1 className="title">Eye controlled Flappy Bird</h1>
+        <h1 className="title">Blink controlled Flappy Bird</h1>
         <Card className="game-card">
-          <Game gaze={eyeY} />
+          <Game blink={blink} />
         </Card>
       </section>
       <aside className="side">
         <Card className="panel">
           <h2>
             <Eye />
-            Eye control
+            Blink control
           </h2>
           <p className="status">{ready}</p>
           <Button onClick={() => setActive(true)} disabled={active} className="full">
             <Camera className="icon" />
             Start camera
           </Button>
+        </Card>
+        <Card className="panel">
+          <h2>
+            <Server />
+            Backend blink
+          </h2>
+          <p className="muted">{boot.status}</p>
+          <p className="tiny">
+            Camera frames are sent as compact binary WebSocket messages to detect blinks; the feed is not shown.
+          </p>
         </Card>
       </aside>
     </main>

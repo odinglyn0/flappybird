@@ -30,8 +30,8 @@ export function createGameState(): GameState {
   };
 }
 
-export function shouldFlap(previousGaze: number, currentGaze: number, threshold = 0.012) {
-  return currentGaze < previousGaze - threshold;
+export function shouldFlap(previousBlink: boolean, currentBlink: boolean) {
+  return currentBlink && !previousBlink;
 }
 
 export function nextPipeGap(random = Math.random) {

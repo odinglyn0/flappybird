@@ -22,7 +22,8 @@ function clamp(value, min, max) {
 }
 
 function createAdaptiveProcessor() {
-  let lastY = 0.5;
+  let baseline = 0.5;
+  let lastBlink = false;
   let targetFps = 12;
 
   return async function processFrame(frame) {
@@ -31,9 +32,11 @@ function createAdaptiveProcessor() {
     // Backend-only video processing boundary: binary camera frames arrive here.
     // A production gaze model can decode `frame` and update `modelY`; the client
     // never receives or displays the camera feed.
-    const signal = frame.length ? frame.readUInt8(Math.floor(frame.length / 2)) / 255 : lastY;
-    const modelY = clamp(lastY * 0.82 + signal * 0.18, 0.05, 0.95);
-    lastY = modelY;
+    const signal = frame.length ? frame.readUInt8(Math.floor(frame.length / 2)) / 255 : baseline;
+    baseline = clamp(baseline * 0.88 + signal * 0.12, 0.05, 0.95);
+    const blink = signal < baseline - 0.18;
+    const blinkStarted = blink && !lastBlink;
+    lastBlink = blink;
 
     const latencyMs = performance.now() - started;
     if (latencyMs > 65) targetFps = Math.max(6, targetFps - 1);
@@ -41,7 +44,7 @@ function createAdaptiveProcessor() {
 
     return {
       type: 'gaze',
-      eyeY: modelY,
+      blink: blinkStarted,
       fps: Math.round(targetFps),
       nextFrameMs: Math.round(1000 / targetFps),
     };

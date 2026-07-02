@@ -24,14 +24,14 @@ HTMLCanvasElement.prototype.getContext = vi.fn(
 describe('App UI', () => {
   it('renders focused title and panels without a camera feed', () => {
     render(<App />);
-    expect(screen.getByText(/Eye controlled Flappy Bird/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /^Eye control$/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Backend gaze/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Blink controlled Flappy Bird/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Blink control$/i })).toBeInTheDocument();
+    expect(screen.getByText(/Backend blink/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Camera preview/i)).not.toBeInTheDocument();
   });
 
   it('renders accessible game canvas and reset button', () => {
-    render(<Game gaze={0.5} />);
+    render(<Game blink={false} />);
     expect(screen.getByLabelText(/Flappy Bird game board/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reset/i })).toBeInTheDocument();
   });
