@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: WTFPL
+node_modules
+dist
+coverage
+.git
+.env
+*.log
+*.safetensors
