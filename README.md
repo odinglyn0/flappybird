@@ -61,3 +61,29 @@ npm run build
 ## License
 
 WTFPL – Do What the Fuck You Want to Public License. See [LICENSE](./LICENSE).
+
+### GitHub Actions Railway CI/CD
+
+This repository includes GitHub Actions workflows for CI and Railway deployments:
+
+- `.github/workflows/ci.yml` runs typechecking, tests, and a production build on pushes to `main` and on pull requests.
+- `.github/workflows/railway-production.yml` deploys every push to `main` to the Railway production environment with `railway up --ci`.
+- `.github/workflows/railway-pr-environments.yml` creates or reuses a Railway environment named `pr-<number>` for each same-repository pull request, deploys the PR there, comments with the preview environment/domain when available, and deletes the Railway environment when the PR closes.
+
+Configure these GitHub secrets before enabling deployments:
+
+| Secret                     | Purpose                                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `RAILWAY_PRODUCTION_TOKEN` | Railway project token scoped to the production environment; used only by the main-branch deploy workflow. |
+| `RAILWAY_API_TOKEN`        | Railway account/workspace token that can create, duplicate, deploy, and delete PR environments.           |
+| `RAILWAY_PROJECT_ID`       | Railway project ID for the app; used by the PR environment workflow to link the CLI non-interactively.    |
+
+Optional GitHub Actions variables:
+
+| Variable                         | Default      | Purpose                                                       |
+| -------------------------------- | ------------ | ------------------------------------------------------------- |
+| `RAILWAY_SERVICE`                | `flappybird` | Railway service name or ID to deploy.                         |
+| `RAILWAY_PRODUCTION_ENVIRONMENT` | `production` | Environment used by the main-branch deployment.               |
+| `RAILWAY_PR_BASE_ENVIRONMENT`    | `production` | Environment duplicated when creating PR preview environments. |
+
+For security, the PR preview workflow only runs for pull requests from branches in the same repository, so Railway secrets are not exposed to untrusted forks.
