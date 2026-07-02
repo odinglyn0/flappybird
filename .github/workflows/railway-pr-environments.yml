@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Railway CLI
         run: |
-          curl -fsSL https://railway.com/install.sh | sh
+          curl -fsSL https://railway.com/install.sh | bash
           echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
 
       - name: Link Railway project
@@ -99,7 +99,7 @@ jobs:
     steps:
       - name: Install Railway CLI
         run: |
-          curl -fsSL https://railway.com/install.sh | sh
+          curl -fsSL https://railway.com/install.sh | bash
           echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
 
       - name: Link Railway project
