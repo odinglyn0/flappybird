@@ -3,13 +3,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App, Game } from './App';
 
-vi.mock('@tensorflow/tfjs', () => ({ setBackend: vi.fn(), ready: vi.fn() }));
-vi.mock('@tensorflow/tfjs-backend-webgl', () => ({}));
-vi.mock('@tensorflow-models/face-landmarks-detection', () => ({
-  SupportedModels: { MediaPipeFaceMesh: 'MediaPipeFaceMesh' },
-  createDetector: vi.fn(),
-}));
-
 afterEach(() => {
   cleanup();
 });
@@ -29,11 +22,12 @@ HTMLCanvasElement.prototype.getContext = vi.fn(
 );
 
 describe('App UI', () => {
-  it('renders professional title and panels', () => {
+  it('renders focused title and panels without a camera feed', () => {
     render(<App />);
     expect(screen.getByText(/Eye controlled Flappy Bird/i)).toBeInTheDocument();
-    expect(screen.getByText(/Browser eye input/i)).toBeInTheDocument();
-    expect(screen.getByText(/Safe model bootstrap/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Eye control$/i })).toBeInTheDocument();
+    expect(screen.getByText(/Backend gaze/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Camera preview/i)).not.toBeInTheDocument();
   });
 
   it('renders accessible game canvas and reset button', () => {

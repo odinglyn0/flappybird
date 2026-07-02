@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: WTFPL
-import * as faceLandmarksDetection from '@tensorflow-models/face-landmarks-detection';
-import '@tensorflow/tfjs-backend-webgl';
-import * as tf from '@tensorflow/tfjs';
-import { Camera, Eye, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Camera, Eye, RotateCcw, Server } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { normalizedEyeY } from '@/eye/landmarks';
 import { createGameState, GAME, shouldFlap, stepGame, type GameState } from '@/game/flappy';
 import { bootstrapSafeTensors, type BootstrapResult } from '@/model/safetensors';
 import './index.css';
 
 function useEyeController(active: boolean) {
-  const video = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState('Idle');
   const [eyeY, setEyeY] = useState(0.5);
 
@@ -22,58 +17,86 @@ function useEyeController(active: boolean) {
     }
 
     let stop = false;
-    let raf = 0;
+    let timer = 0;
     let stream: MediaStream | undefined;
-    let faceDetector: faceLandmarksDetection.FaceLandmarksDetector | null = null;
+    let socket: WebSocket | undefined;
+    let video: HTMLVideoElement | undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = 224;
+    canvas.height = 168;
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    const schedule = (delay: number) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(sendFrame, delay);
+    };
+
+    const sendFrame = () => {
+      if (stop || !socket || socket.readyState !== WebSocket.OPEN || !video || !ctx) {
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || stop || socket?.readyState !== WebSocket.OPEN) {
+            return;
+          }
+          blob.arrayBuffer().then((buffer) => socket?.send(buffer));
+        },
+        'image/jpeg',
+        0.52,
+      );
+    };
 
     (async () => {
-      setReady('Loading TensorFlow.js WebGL…');
-      await tf.setBackend('webgl');
-      await tf.ready();
-
-      setReady('Requesting camera…');
+      setReady('Starting…');
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
+        video: { facingMode: 'user', width: 320, height: 240, frameRate: { ideal: 15, max: 20 } },
         audio: false,
       });
 
-      if (video.current) {
-        video.current.srcObject = stream;
-        await video.current.play();
-      }
+      video = document.createElement('video');
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+      await video.play();
 
-      setReady('Loading TF.js MediaPipe FaceMesh eye landmarks…');
-      faceDetector = await faceLandmarksDetection.createDetector(
-        faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
-        { runtime: 'tfjs', refineLandmarks: true, maxFaces: 1 },
-      );
-      setReady('Tracking eyes');
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      socket = new WebSocket(`${protocol}://${window.location.host}/ws/gaze`);
+      socket.binaryType = 'arraybuffer';
 
-      const tick = async () => {
-        if (stop || !video.current || !faceDetector) {
-          return;
+      socket.addEventListener('open', () => {
+        setReady('Tracking');
+        schedule(0);
+      });
+
+      socket.addEventListener('message', (event: MessageEvent<string>) => {
+        const message = JSON.parse(event.data) as {
+          type: string;
+          eyeY?: number;
+          nextFrameMs?: number;
+        };
+        if (message.type === 'gaze' && typeof message.eyeY === 'number') {
+          setEyeY(message.eyeY);
+          schedule(message.nextFrameMs ?? 90);
         }
+      });
 
-        const faces = await faceDetector.estimateFaces(video.current, { flipHorizontal: true });
-        const y = normalizedEyeY(faces[0]?.keypoints || [], video.current.videoHeight);
-        if (y !== null) {
-          setEyeY(y);
-        }
-        raf = requestAnimationFrame(tick);
-      };
-
-      tick();
-    })().catch((error: Error) => setReady(`Camera/model error: ${error.message}`));
+      socket.addEventListener('close', () => {
+        if (!stop) setReady('Disconnected');
+      });
+    })().catch(() => setReady('Unavailable'));
 
     return () => {
       stop = true;
-      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+      socket?.close();
       stream?.getTracks().forEach((track) => track.stop());
-      faceDetector?.dispose();
     };
   }, [active]);
 
-  return { video, ready, eyeY };
+  return { ready, eyeY };
 }
 
 function draw(ctx: CanvasRenderingContext2D, state: GameState) {
@@ -168,7 +191,7 @@ export function App() {
     ok: false,
     status: 'Checking public safetensors…',
   });
-  const { video, ready, eyeY } = useEyeController(active);
+  const { ready, eyeY } = useEyeController(active);
 
   useEffect(() => {
     bootstrapSafeTensors()
@@ -176,7 +199,7 @@ export function App() {
       .catch((error: Error) =>
         setBoot({
           ok: false,
-          status: `Safe model bootstrap unavailable: ${error.message}. Using TF.js eye-landmark fallback.`,
+          status: `Safe model bootstrap unavailable: ${error.message}. Backend gaze still starts from camera input.`,
         }),
       );
   }, []);
@@ -194,15 +217,8 @@ export function App() {
         <Card className="panel">
           <h2>
             <Eye />
-            Browser eye input
+            Eye control
           </h2>
-          <video
-            ref={video}
-            muted
-            playsInline
-            className="camera"
-            aria-label="Camera preview for eye tracking"
-          />
           <p className="status">{ready}</p>
           <Button onClick={() => setActive(true)} disabled={active} className="full">
             <Camera className="icon" />
@@ -211,13 +227,12 @@ export function App() {
         </Card>
         <Card className="panel">
           <h2>
-            <ShieldCheck />
-            Safe model bootstrap
+            <Server />
+            Backend gaze
           </h2>
           <p className="muted">{boot.status}</p>
           <p className="tiny">
-            Verified target: UniGaze Hugging Face safetensors checkpoint. Runtime gameplay input
-            remains client-only through TensorFlow.js eye landmarks.
+            Camera frames are sent as compact binary WebSocket messages; the feed is not shown.
           </p>
         </Card>
       </aside>
