@@ -8,6 +8,7 @@ permissions:
   contents: read
 
 env:
+  RAILWAY_CLI_IMAGE: ghcr.io/railwayapp/cli:5.23.3
   RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE || 'flappybird' }}
   RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_PRODUCTION_ENVIRONMENT || 'production' }}
 
@@ -19,12 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: |
-          curl -fsSL https://railway.com/install.sh | sh
-          echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
-
       - name: Deploy to production
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_TOKEN }}
-        run: railway up --ci --service "$RAILWAY_SERVICE" --environment "$RAILWAY_ENVIRONMENT"
+        run: |
+          docker run --rm \
+            -e RAILWAY_TOKEN \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "$RAILWAY_CLI_IMAGE" \
+            railway up --ci --service "$RAILWAY_SERVICE" --environment "$RAILWAY_ENVIRONMENT"
