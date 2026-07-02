@@ -172,7 +172,14 @@ export function App() {
   const { video, ready, eyeY } = useEyeController(active);
 
   useEffect(() => {
-    bootstrapSafeTensors().then(setBoot);
+    bootstrapSafeTensors()
+      .then(setBoot)
+      .catch((error: Error) =>
+        setBoot({
+          ok: false,
+          status: `Safe model bootstrap unavailable: ${error.message}. Using TF.js eye-landmark fallback.`,
+        }),
+      );
   }, []);
 
   return (
