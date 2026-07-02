@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: WTFPL
+node_modules
+dist
+coverage
+.env
+.DS_Store
+*.log
+
+tsconfig.tsbuildinfo
