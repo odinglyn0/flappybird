@@ -1,0 +1,9 @@
+{
+  "license": "WTFPL",
+  "name": "UniGaze public safetensors bootstrap",
+  "source": "https://huggingface.co/UniGaze/UniGaze-models",
+  "paper": "https://huggingface.co/papers/2502.02307",
+  "recommendedFile": "unigaze_b16_joint.safetensors",
+  "localPath": "/models/unigaze_b16_joint.safetensors",
+  "note": "Place the Hugging Face safetensors file here for local browser bootstrap. The app validates the safetensors header without executing model code, then uses TensorFlow.js FaceLandmarksDetection for live eye landmarks in the browser."
+}
