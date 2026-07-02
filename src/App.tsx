@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: WTFPL
-import { Camera, Eye, RotateCcw, Server } from 'lucide-react';
+import { Camera, Eye, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createGameState, GAME, shouldFlap, stepGame, type GameState } from '@/game/flappy';
-import { bootstrapSafeTensors, type BootstrapResult } from '@/model/safetensors';
 import './index.css';
 
 function useEyeController(active: boolean) {
