@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: WTFPL
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App, Game } from './App';
 
 vi.mock('@tensorflow/tfjs', () => ({ setBackend: vi.fn(), ready: vi.fn() }));
@@ -9,6 +9,10 @@ vi.mock('@tensorflow-models/face-landmarks-detection', () => ({
   SupportedModels: { MediaPipeFaceMesh: 'MediaPipeFaceMesh' },
   createDetector: vi.fn(),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 HTMLCanvasElement.prototype.getContext = vi.fn(
   () =>
