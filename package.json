@@ -7,7 +7,10 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc -b",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "react-doctor": "react-doctor"
   },
   "dependencies": {
     "@tensorflow-models/face-landmarks-detection": "^1.0.6",
@@ -29,7 +32,9 @@
     "@vitest/coverage-v8": "latest",
     "eslint": "latest",
     "jsdom": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "prettier": "latest",
+    "react-doctor": "latest"
   },
   "engines": {
     "node": ">=24",

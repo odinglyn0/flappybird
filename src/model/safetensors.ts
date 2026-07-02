@@ -1,5 +1,62 @@
 // SPDX-License-Identifier: WTFPL
-export type ModelManifest = { name: string; source: string; recommendedFile: string; localPath: string; sha256?: string; note: string };
-export type BootstrapResult = { ok: boolean; status: string; manifest?: ModelManifest; tensors?: string[] };
-export function parseSafeTensorsHeader(buffer: ArrayBuffer) { if (buffer.byteLength < 9) throw new Error('safetensors file is too small'); const view = new DataView(buffer); const headerLen = Number(view.getBigUint64(0, true)); if (!Number.isSafeInteger(headerLen) || headerLen <= 0 || headerLen > buffer.byteLength - 8) throw new Error('invalid safetensors header length'); const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 8, headerLen))); if (!header || typeof header !== 'object' || Array.isArray(header)) throw new Error('invalid safetensors header'); return header as Record<string, unknown>; }
-export async function bootstrapSafeTensors(fetcher: typeof fetch = fetch): Promise<BootstrapResult> { const manifest = await fetcher('/models/eye-gaze-model.json').then(r => r.json() as Promise<ModelManifest>); try { const res = await fetcher(manifest.localPath, { headers: { Range: 'bytes=0-1048575' } }); if (!res.ok && res.status !== 206) throw new Error('local safetensors not found'); const header = parseSafeTensorsHeader(await res.arrayBuffer()); return { ok: true, manifest, tensors: Object.keys(header).filter(k => k !== '__metadata__'), status: `Validated ${manifest.recommendedFile} header from public/.` }; } catch { return { ok: false, manifest, status: `Download ${manifest.recommendedFile} from ${manifest.source} into public/models/. Using TF.js eye-landmark fallback.` }; } }
+export type ModelManifest = {
+  name: string;
+  source: string;
+  recommendedFile: string;
+  localPath: string;
+  sha256?: string;
+  note: string;
+};
+
+export type BootstrapResult = {
+  ok: boolean;
+  status: string;
+  manifest?: ModelManifest;
+  tensors?: string[];
+};
+
+export function parseSafeTensorsHeader(buffer: ArrayBuffer) {
+  if (buffer.byteLength < 9) {
+    throw new Error('safetensors file is too small');
+  }
+
+  const view = new DataView(buffer);
+  const headerLen = Number(view.getBigUint64(0, true));
+  if (!Number.isSafeInteger(headerLen) || headerLen <= 0 || headerLen > buffer.byteLength - 8) {
+    throw new Error('invalid safetensors header length');
+  }
+
+  const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 8, headerLen)));
+  if (!header || typeof header !== 'object' || Array.isArray(header)) {
+    throw new Error('invalid safetensors header');
+  }
+
+  return header as Record<string, unknown>;
+}
+
+export async function bootstrapSafeTensors(fetcher: typeof fetch = fetch): Promise<BootstrapResult> {
+  const manifest = await fetcher('/models/eye-gaze-model.json').then(
+    (response) => response.json() as Promise<ModelManifest>,
+  );
+
+  try {
+    const response = await fetcher(manifest.localPath, { headers: { Range: 'bytes=0-1048575' } });
+    if (!response.ok && response.status !== 206) {
+      throw new Error('local safetensors not found');
+    }
+
+    const header = parseSafeTensorsHeader(await response.arrayBuffer());
+    return {
+      ok: true,
+      manifest,
+      tensors: Object.keys(header).filter((key) => key !== '__metadata__'),
+      status: `Validated ${manifest.recommendedFile} header from public/.`,
+    };
+  } catch {
+    return {
+      ok: false,
+      manifest,
+      status: `Download ${manifest.recommendedFile} from ${manifest.source} into public/models/. Using TF.js eye-landmark fallback.`,
+    };
+  }
+}

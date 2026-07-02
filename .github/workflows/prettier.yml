@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: WTFPL
+name: Prettier
+on:
+  push:
+    branches: [main, work]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          check-latest: true
+      - run: npm install
+      - run: npm run format:check
