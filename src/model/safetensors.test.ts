@@ -21,7 +21,9 @@ const manifest = {
 describe('safetensors bootstrap', () => {
   it('parses valid safetensors headers', () => {
     expect(
-      parseSafeTensorsHeader(fileFor({ weight: { dtype: 'F32', shape: [1], data_offsets: [0, 4] } })),
+      parseSafeTensorsHeader(
+        fileFor({ weight: { dtype: 'F32', shape: [1], data_offsets: [0, 4] } }),
+      ),
     ).toHaveProperty('weight');
   });
 
