@@ -11,9 +11,8 @@ import { createGameState, GAME, shouldFlap, stepGame, type GameState } from '@/g
 import { bootstrapSafeTensors, type BootstrapResult } from '@/model/safetensors';
 import './index.css';
 
-export function useEyeController(active: boolean) {
+function useEyeController(active: boolean) {
   const video = useRef<HTMLVideoElement>(null);
-  const detector = useRef<faceLandmarksDetection.FaceLandmarksDetector | null>(null);
   const [ready, setReady] = useState('Idle');
   const [eyeY, setEyeY] = useState(0.5);
 
@@ -25,6 +24,7 @@ export function useEyeController(active: boolean) {
     let stop = false;
     let raf = 0;
     let stream: MediaStream | undefined;
+    let faceDetector: faceLandmarksDetection.FaceLandmarksDetector | null = null;
 
     (async () => {
       setReady('Loading TensorFlow.js WebGL…');
@@ -43,18 +43,18 @@ export function useEyeController(active: boolean) {
       }
 
       setReady('Loading TF.js MediaPipe FaceMesh eye landmarks…');
-      detector.current = await faceLandmarksDetection.createDetector(
+      faceDetector = await faceLandmarksDetection.createDetector(
         faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
         { runtime: 'tfjs', refineLandmarks: true, maxFaces: 1 },
       );
       setReady('Tracking eyes');
 
       const tick = async () => {
-        if (stop || !video.current || !detector.current) {
+        if (stop || !video.current || !faceDetector) {
           return;
         }
 
-        const faces = await detector.current.estimateFaces(video.current, { flipHorizontal: true });
+        const faces = await faceDetector.estimateFaces(video.current, { flipHorizontal: true });
         const y = normalizedEyeY(faces[0]?.keypoints || [], video.current.videoHeight);
         if (y !== null) {
           setEyeY(y);
@@ -69,8 +69,7 @@ export function useEyeController(active: boolean) {
       stop = true;
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((track) => track.stop());
-      detector.current?.dispose();
-      detector.current = null;
+      faceDetector?.dispose();
     };
   }, [active]);
 
@@ -197,7 +196,13 @@ export function App() {
             <Eye />
             Browser eye input
           </h2>
-          <video ref={video} muted playsInline className="camera" />
+          <video
+            ref={video}
+            muted
+            playsInline
+            className="camera"
+            aria-label="Camera preview for eye tracking"
+          />
           <p className="status">{ready}</p>
           <Button onClick={() => setActive(true)} disabled={active} className="full">
             <Camera className="icon" />

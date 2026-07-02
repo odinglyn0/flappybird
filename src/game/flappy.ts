@@ -44,9 +44,13 @@ export function stepGame(state: GameState, flap: boolean, random = Math.random):
   bird.y += bird.vy;
 
   const frame = state.frame + 1;
-  let pipes = state.pipes
-    .map((pipe) => ({ ...pipe, x: pipe.x - GAME.speed }))
-    .filter((pipe) => pipe.x > -GAME.pipeWidth);
+  let pipes = state.pipes.reduce<Pipe[]>((visiblePipes, pipe) => {
+    const movedPipe = { ...pipe, x: pipe.x - GAME.speed };
+    if (movedPipe.x > -GAME.pipeWidth) {
+      visiblePipes.push(movedPipe);
+    }
+    return visiblePipes;
+  }, []);
 
   if (frame % GAME.spawnEvery === 0) {
     pipes = [...pipes, { x: GAME.width + 20, gap: nextPipeGap(random) }];
