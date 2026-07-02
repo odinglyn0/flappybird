@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: WTFPL
-import { Camera, Eye, RotateCcw, Server } from 'lucide-react';
+import { Camera, Eye, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createGameState, GAME, shouldFlap, stepGame, type GameState } from '@/game/flappy';
-import { bootstrapSafeTensors, type BootstrapResult } from '@/model/safetensors';
 import './index.css';
 
 function useEyeController(active: boolean) {
@@ -187,22 +186,7 @@ export function Game({ gaze }: { gaze: number }) {
 
 export function App() {
   const [active, setActive] = useState(false);
-  const [boot, setBoot] = useState<BootstrapResult>({
-    ok: false,
-    status: 'Checking public safetensors…',
-  });
   const { ready, eyeY } = useEyeController(active);
-
-  useEffect(() => {
-    bootstrapSafeTensors()
-      .then(setBoot)
-      .catch((error: Error) =>
-        setBoot({
-          ok: false,
-          status: `Safe model bootstrap unavailable: ${error.message}. Backend gaze still starts from camera input.`,
-        }),
-      );
-  }, []);
 
   return (
     <main className="app">
@@ -224,16 +208,6 @@ export function App() {
             <Camera className="icon" />
             Start camera
           </Button>
-        </Card>
-        <Card className="panel">
-          <h2>
-            <Server />
-            Backend gaze
-          </h2>
-          <p className="muted">{boot.status}</p>
-          <p className="tiny">
-            Camera frames are sent as compact binary WebSocket messages; the feed is not shown.
-          </p>
         </Card>
       </aside>
     </main>
