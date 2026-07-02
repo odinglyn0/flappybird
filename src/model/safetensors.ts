@@ -34,7 +34,9 @@ export function parseSafeTensorsHeader(buffer: ArrayBuffer) {
   return header as Record<string, unknown>;
 }
 
-export async function bootstrapSafeTensors(fetcher: typeof fetch = fetch): Promise<BootstrapResult> {
+export async function bootstrapSafeTensors(
+  fetcher: typeof fetch = fetch,
+): Promise<BootstrapResult> {
   const manifest = await fetcher('/models/eye-gaze-model.json').then(
     (response) => response.json() as Promise<ModelManifest>,
   );

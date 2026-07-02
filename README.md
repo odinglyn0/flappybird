@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: WTFPL -->
+
 # Eye-Controlled Flappy Bird
 
 A fully client-side React 19 + Vite Flappy Bird app controlled by webcam eye movement. The app loads TensorFlow.js in the browser, uses TF.js MediaPipe FaceMesh eye/iris landmarks for live control, and safely validates a local Hugging Face UniGaze `safetensors` checkpoint header from `public/models` without executing model code.

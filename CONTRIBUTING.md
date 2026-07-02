@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: WTFPL -->
+
 # Contributing
 
 Thanks for helping make this browser toy better.

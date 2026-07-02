@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: WTFPL -->
+
 # Security Policy
 
 ## Supported versions
