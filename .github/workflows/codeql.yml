@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: WTFPL
+name: CodeQL
+on:
+  push:
+    branches: [main, work]
+  pull_request:
+  schedule:
+    - cron: '27 3 * * 1'
+permissions:
+  security-events: write
+  packages: read
+  actions: read
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v4
