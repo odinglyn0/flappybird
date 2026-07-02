@@ -26,7 +26,7 @@ describe('App UI', () => {
     render(<App />);
     expect(screen.getByText(/Eye controlled Flappy Bird/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^Eye control$/i })).toBeInTheDocument();
-    expect(screen.getByText(/Backend gaze/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Backend gaze/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Camera preview/i)).not.toBeInTheDocument();
   });
 
