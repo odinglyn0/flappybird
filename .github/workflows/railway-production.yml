@@ -1,0 +1,30 @@
+name: Railway Production Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE || 'flappybird' }}
+  RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_PRODUCTION_ENVIRONMENT || 'production' }}
+
+jobs:
+  deploy:
+    name: Deploy main to Railway
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+
+      - name: Deploy to production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_TOKEN }}
+        run: railway up --ci --service "$RAILWAY_SERVICE" --environment "$RAILWAY_ENVIRONMENT"
