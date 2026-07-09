@@ -102,7 +102,7 @@ jobs:
           fi
 
       - name: Comment with Railway environment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.domain.outputs.url }}
         with:
